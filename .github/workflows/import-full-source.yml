@@ -1,0 +1,48 @@
+name: Import full Lemon source into Astra
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Astra branch
+        uses: actions/checkout@v4
+        with:
+          ref: astra-stage1
+          fetch-depth: 0
+
+      - name: Download upstream Lemon Project source
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            https://github.com/Ghael-V/Lemon-Project/archive/refs/heads/main.zip \
+            -o /tmp/lemon-upstream.zip
+          mkdir -p /tmp/lemon-upstream
+          unzip -q /tmp/lemon-upstream.zip -d /tmp/lemon-upstream
+          SRC="$(find /tmp/lemon-upstream -mindepth 1 -maxdepth 1 -type d | head -n1)"
+          test -n "$SRC"
+          rsync -a --exclude='.git' --exclude='.github/workflows/import-full-source.yml' "$SRC/" ./
+
+      - name: Apply Astra Stage 1 patch
+        run: |
+          set -euo pipefail
+          git apply --check ASTRA_STAGE1_MALI.patch
+          git apply ASTRA_STAGE1_MALI.patch
+
+      - name: Commit full source tree
+        run: |
+          set -euo pipefail
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Import full Lemon source and apply Astra Stage 1"
+          git push origin astra-stage1
