@@ -1,6 +1,8 @@
 name: Import full Lemon source into Astra
 
 on:
+  push:
+    branches: [astra-stage1]
   workflow_dispatch:
 
 permissions:
@@ -44,5 +46,5 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Import full Lemon source and apply Astra Stage 1"
+          git commit -m "Import full Lemon source and apply Astra Stage 1 [skip ci]"
           git push origin astra-stage1
